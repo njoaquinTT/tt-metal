@@ -40,7 +40,7 @@ def load_hf_state_dict(ckpt_dir):
     return loaded_weights
 
 def convert_microsoft_to_hf(state_dict):
-    keys = state_dict.keys()
+    keys = list(state_dict.keys())
     for key in keys:
         if "gate_up_proj" in key:
             value = state_dict[key]
