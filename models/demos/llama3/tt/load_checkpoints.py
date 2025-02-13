@@ -40,21 +40,27 @@ def load_hf_state_dict(ckpt_dir):
     return loaded_weights
 
 def convert_microsoft_to_hf(state_dict):
-    for key in state_dict:
+    keys = state_dict.keys()
+    for key in keys:
         if "gate_up_proj" in key:
-            gate, up = torch.split(state_dict[key], depth // 2, dim=0)
+            value = state_dict[key]
+            depth = value.shape[0]
+            gate, up = torch.split(value, depth // 2, dim=0)
             gate_key = key.replace("gate_up","gate")
             up_key = key.replace("gate_up","up")
             state_dict[gate_key] = gate
             state_dict[up_key] = up
         elif "qkv_proj" in key:
-            k, v, q = torch.split(state_dict[key], depth // 3, dim=0)
+            value = state_dict[key]
+            depth = value.shape[0]
+            k, v, q = torch.split(value, depth // 3, dim=0)
             k_key = key.replace("qkv_proj","k_proj")
             v_key = key.replace("qkv_proj","v_proj")
             q_key = key.replace("qkv_proj","q_proj")
             state_dict[k_key] = k
             state_dict[v_key] = v
             state_dict[q_key] = q
+    return state_dict
 
 def standardize_hf_keys(state_dict):
     if not "lm_head.weight" in state_dict:
@@ -64,8 +70,8 @@ def standardize_hf_keys(state_dict):
 
 
 def convert_hf_to_meta(state_dict, head_dim):
-    state_dict = convert_microsoft_to_hf(state_dict)
     state_dict = convert_hf_qkv_to_meta_format(state_dict, head_dim)
+    state_dict = convert_microsoft_to_meta(state_dict)
     state_dict = map_hf_to_meta_keys(state_dict)
     return state_dict
 
