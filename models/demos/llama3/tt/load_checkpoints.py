@@ -71,7 +71,7 @@ def standardize_hf_keys(state_dict):
 
 def convert_hf_to_meta(state_dict, head_dim):
     state_dict = convert_hf_qkv_to_meta_format(state_dict, head_dim)
-    state_dict = convert_microsoft_to_meta(state_dict)
+    state_dict = convert_microsoft_to_hf(state_dict)
     state_dict = map_hf_to_meta_keys(state_dict)
     return state_dict
 
