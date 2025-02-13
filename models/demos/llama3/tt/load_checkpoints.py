@@ -42,24 +42,27 @@ def load_hf_state_dict(ckpt_dir):
 def convert_microsoft_to_hf(state_dict):
     keys = list(state_dict.keys())
     for key in keys:
-        if "gate_up_proj" in key:
+        if ".gate_up_proj." in key:
             value = state_dict[key]
             depth = value.shape[0]
-            gate, up = torch.split(value, depth // 2, dim=0)
-            gate_key = key.replace("gate_up","gate")
-            up_key = key.replace("gate_up","up")
+            up, gate = value.split(depth//2)
+            gate_key = key.replace(".gate_up_proj.",".gate_proj.")
+            up_key = key.replace(".gate_up_proj.",".up_proj.")
             state_dict[gate_key] = gate
             state_dict[up_key] = up
+            del state_dict[key]
         elif "qkv_proj" in key:
             value = state_dict[key]
             depth = value.shape[0]
             k, v, q = torch.split(value, depth // 3, dim=0)
-            k_key = key.replace("qkv_proj","k_proj")
-            v_key = key.replace("qkv_proj","v_proj")
-            q_key = key.replace("qkv_proj","q_proj")
+            v,k,q = value.split(depth//3)
+            k_key = key.replace(".qkv_proj.",".k_proj.")
+            v_key = key.replace(".qkv_proj.",".v_proj.")
+            q_key = key.replace(".qkv_proj.",".q_proj.")
             state_dict[k_key] = k
             state_dict[v_key] = v
             state_dict[q_key] = q
+            del state_dict[key]
     return state_dict
 
 def standardize_hf_keys(state_dict):
@@ -70,8 +73,8 @@ def standardize_hf_keys(state_dict):
 
 
 def convert_hf_to_meta(state_dict, head_dim):
-    state_dict = convert_hf_qkv_to_meta_format(state_dict, head_dim)
     state_dict = convert_microsoft_to_hf(state_dict)
+    state_dict = convert_hf_qkv_to_meta_format(state_dict, head_dim)
     state_dict = map_hf_to_meta_keys(state_dict)
     return state_dict
 
